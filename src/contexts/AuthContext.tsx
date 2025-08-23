@@ -13,10 +13,21 @@ declare global {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeGoogleAuth = async () => {
       try {
+        // Check if environment variables are available
+        const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+        const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+        
+        if (!clientId || !apiKey) {
+          setAuthError('Google OAuth configuration is missing. Please check your environment variables.');
+          setLoading(false);
+          return;
+        }
+
         // Load Google APIs
         await new Promise<void>((resolve) => {
           const script = document.createElement('script');
@@ -38,13 +49,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         await window.gapi.client.init({
-          apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
+          apiKey: apiKey,
           discoveryDocs: ['https://photoslibrary.googleapis.com/$discovery/rest?version=v1'],
         });
 
         // Initialize Google Identity Services
         window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          client_id: clientId,
           callback: handleCredentialResponse,
         });
 
@@ -61,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (error) {
         console.error('Failed to initialize Google Auth:', error);
+        setAuthError('Failed to initialize Google authentication. Please try refreshing the page.');
       } finally {
         setLoading(false);
       }
@@ -135,10 +147,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    
+    if (!clientId) {
+      setAuthError('Google Client ID is not configured.');
+      return;
+    }
+
     // Start OAuth flow for Photos API access
     const oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
     const params = new URLSearchParams({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      client_id: clientId,
       redirect_uri: window.location.origin,
       response_type: 'token',
       scope: 'https://www.googleapis.com/auth/photoslibrary.appendonly https://www.googleapis.com/auth/photoslibrary.sharing openid email profile',
@@ -158,7 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, loading }}>
+    <AuthContext.Provider value={{ user, signIn, signOut, loading, authError }}>
       {children}
     </AuthContext.Provider>
   );

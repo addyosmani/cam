@@ -11,4 +11,5 @@ export interface AuthContextType {
   signIn: () => Promise<void>;
   signOut: () => void;
   loading: boolean;
+  authError: string | null;
 }

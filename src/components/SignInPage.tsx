@@ -3,7 +3,7 @@ import { Camera, Upload, Clock, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const SignInPage: React.FC = () => {
-  const { signIn, loading } = useAuth();
+  const { signIn, loading, authError } = useAuth();
 
   const features = [
     {
@@ -67,6 +67,20 @@ export const SignInPage: React.FC = () => {
 
         <div className="max-w-md mx-auto">
           <div className="bg-white p-8 rounded-2xl shadow-xl">
+            {authError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">!</span>
+                  </div>
+                  <div>
+                    <h4 className="text-red-800 font-medium text-sm">Configuration Error</h4>
+                    <p className="text-red-700 text-sm mt-1">{authError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 Get Started
@@ -78,10 +92,10 @@ export const SignInPage: React.FC = () => {
             
             <button
               onClick={signIn}
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center space-x-3 shadow-md hover:shadow-lg"
+              disabled={loading || !!authError}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center space-x-3 shadow-md hover:shadow-lg disabled:cursor-not-allowed"
             >
-              {loading ? (
+              {loading || authError ? (
                 <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
