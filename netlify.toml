@@ -1,0 +1,19 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production.environment]
+  VITE_GOOGLE_CLIENT_ID = ""
+  VITE_GOOGLE_API_KEY = ""
+
+[context.deploy-preview.environment]
+  VITE_GOOGLE_CLIENT_ID = ""
+  VITE_GOOGLE_API_KEY = ""
