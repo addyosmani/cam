@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        // Load the Google APIs
+        // Load Google APIs
         await new Promise<void>((resolve) => {
           const script = document.createElement('script');
           script.src = 'https://accounts.google.com/gsi/client';
@@ -157,17 +157,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const redirectUri = import.meta.env.VITE_REDIRECT_URI;
-    if (!redirectUri) {
-      setAuthError('Google Redirect URI is not configured.');
-      return;
-    }
-
     // Start OAuth flow for Photos API access
     const oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
     const params = new URLSearchParams({
       client_id: clientId,
-      redirect_uri: redirectUri,
+      redirect_uri: window.location.origin + window.location.pathname,
       response_type: 'token',
       scope: 'https://www.googleapis.com/auth/photoslibrary.appendonly https://www.googleapis.com/auth/photoslibrary.sharing openid email profile',
       include_granted_scopes: 'true',
