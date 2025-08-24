@@ -13,7 +13,9 @@
 [context.production.environment]
   VITE_GOOGLE_CLIENT_ID = "1075593433051-apf59ppb9r4lbd40ku8auplq8jbhqtq9.apps.googleusercontent.com"
   VITE_GOOGLE_API_KEY = "AIzaSyDdi0yXcbIsOHiSSOq1bDJkTBRWMu0_MA4"
+  VITE_REDIRECT_URI = "https://cam.addy.ie/"
 
 [context.deploy-preview.environment]
   VITE_GOOGLE_CLIENT_ID = "1075593433051-apf59ppb9r4lbd40ku8auplq8jbhqtq9.apps.googleusercontent.com"
   VITE_GOOGLE_API_KEY = "AIzaSyDdi0yXcbIsOHiSSOq1bDJkTBRWMu0_MA4"
+  VITE_REDIRECT_URI = "https://cam.addy.ie/"

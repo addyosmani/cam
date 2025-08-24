@@ -157,11 +157,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    const redirectUri = import.meta.env.VITE_REDIRECT_URI;
+    if (!redirectUri) {
+      setAuthError('Google Redirect URI is not configured.');
+      return;
+    }
+
     // Start OAuth flow for Photos API access
     const oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
     const params = new URLSearchParams({
       client_id: clientId,
-      redirect_uri: window.location.href.split('#')[0],
+      redirect_uri: redirectUri,
       response_type: 'token',
       scope: 'https://www.googleapis.com/auth/photoslibrary.appendonly https://www.googleapis.com/auth/photoslibrary.sharing openid email profile',
       include_granted_scopes: 'true',
