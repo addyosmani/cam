@@ -59,11 +59,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           callback: handleCredentialResponse,
         });
 
-        // Check for existing session
+        // Check for access token in URL hash
+        const hash = window.location.hash;
+        if (hash.includes('access_token')) {
+          const urlParams = new URLSearchParams(hash.substring(1));
+          const accessToken = urlParams.get('access_token');
+          
+          if (accessToken) {
+            try {
+              const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+
+              if (userInfoResponse.ok) {
+                const userInfo = await userInfoResponse.json();
+                const userData: User = {
+                  id: userInfo.id,
+                  email: userInfo.email,
+                  name: userInfo.name,
+                  picture: userInfo.picture,
+                  accessToken: accessToken,
+                };
+
+                setUser(userData);
+                localStorage.setItem('user', JSON.stringify(userData));
+                window.history.replaceState({}, document.title, window.location.pathname);
+              } else {
+                throw new Error('Failed to fetch user info');
+              }
+            } catch (error) {
+              console.error('Error fetching user info:', error);
+              setAuthError('Failed to fetch user information.');
+            } finally {
+              setLoading(false);
+            }
+            return; // Stop further execution if we handled the token
+          }
+        }
+
+        // Check for existing session if no token in hash
         const savedUser = localStorage.getItem('user');
         if (savedUser) {
           const userData = JSON.parse(savedUser);
-          // Validate the saved token is still valid
           if (userData.accessToken && await validateToken(userData.accessToken)) {
             setUser(userData);
           } else {
@@ -114,30 +151,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         include_granted_scopes: 'true',
         state: 'auth_callback',
       });
-
-      // Check if we're returning from OAuth flow
-      const hash = window.location.hash;
-      if (hash.includes('access_token')) {
-        const urlParams = new URLSearchParams(hash.substring(1));
-        const accessToken = urlParams.get('access_token');
-        
-        if (accessToken) {
-          const userData: User = {
-            id: payload.sub,
-            email: payload.email,
-            name: payload.name,
-            picture: payload.picture,
-            accessToken: accessToken,
-          };
-
-          setUser(userData);
-          localStorage.setItem('user', JSON.stringify(userData));
-          
-          // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return;
-        }
-      }
 
       // If no access token in URL, redirect to OAuth flow
       window.location.href = `${oauth2Endpoint}?${params.toString()}`;
