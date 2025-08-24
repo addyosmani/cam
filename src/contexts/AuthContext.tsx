@@ -161,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
     const params = new URLSearchParams({
       client_id: clientId,
-      redirect_uri: window.location.origin + window.location.pathname,
+      redirect_uri: window.location.href.split('#')[0],
       response_type: 'token',
       scope: 'https://www.googleapis.com/auth/photoslibrary.appendonly https://www.googleapis.com/auth/photoslibrary.sharing openid email profile',
       include_granted_scopes: 'true',
