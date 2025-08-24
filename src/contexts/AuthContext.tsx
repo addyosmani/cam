@@ -18,6 +18,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeGoogleAuth = async () => {
       try {
+        // First, check if we're returning from OAuth flow
+        const hash = window.location.hash;
+        if (hash.includes('access_token') && hash.includes('state=auth_callback')) {
+          await handleOAuthCallback();
+          return;
+        }
+
         // Check if environment variables are available
         const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
         const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
@@ -81,6 +88,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeGoogleAuth();
   }, []);
 
+  const handleOAuthCallback = async () => {
+    try {
+      setLoading(true);
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+      const state = params.get('state');
+
+      if (accessToken && state === 'auth_callback') {
+        // Get user info from Google
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (userInfoResponse.ok) {
+          const userInfo = await userInfoResponse.json();
+          
+          const userData: User = {
+            id: userInfo.id,
+            email: userInfo.email,
+            name: userInfo.name,
+            picture: userInfo.picture,
+            accessToken: accessToken,
+          };
+
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+          
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+          throw new Error('Failed to get user info');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to handle OAuth callback:', error);
+      setAuthError('Failed to complete sign in. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
   const validateToken = async (token: string): Promise<boolean> => {
     try {
       const response = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${token}`);
@@ -92,57 +142,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleCredentialResponse = async (response: any) => {
     try {
-      // Exchange the credential for an access token
-      await exchangeCodeForTokens(response.credential);
+      // This is for the ID token flow, but we're using OAuth flow instead
+      console.log('Credential response received, but using OAuth flow');
     } catch (error) {
       console.error('Failed to process credential:', error);
-    }
-  };
-
-  const exchangeCodeForTokens = async (credential: string) => {
-    try {
-      // Decode the JWT to get user info
-      const payload = JSON.parse(atob(credential.split('.')[1]));
-      
-      // Use Google OAuth2 flow to get access token with proper scopes
-      const oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
-      const params = new URLSearchParams({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-        redirect_uri: window.location.origin,
-        response_type: 'token',
-        scope: 'https://www.googleapis.com/auth/photoslibrary.appendonly https://www.googleapis.com/auth/photoslibrary.sharing',
-        include_granted_scopes: 'true',
-        state: 'auth_callback',
-      });
-
-      // Check if we're returning from OAuth flow
-      const hash = window.location.hash;
-      if (hash.includes('access_token')) {
-        const urlParams = new URLSearchParams(hash.substring(1));
-        const accessToken = urlParams.get('access_token');
-        
-        if (accessToken) {
-          const userData: User = {
-            id: payload.sub,
-            email: payload.email,
-            name: payload.name,
-            picture: payload.picture,
-            accessToken: accessToken,
-          };
-
-          setUser(userData);
-          localStorage.setItem('user', JSON.stringify(userData));
-          
-          // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return;
-        }
-      }
-
-      // If no access token in URL, redirect to OAuth flow
-      window.location.href = `${oauth2Endpoint}?${params.toString()}`;
-    } catch (error) {
-      console.error('Failed to exchange tokens:', error);
     }
   };
 
@@ -158,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
     const params = new URLSearchParams({
       client_id: clientId,
-      redirect_uri: window.location.origin,
+      redirect_uri: window.location.origin + window.location.pathname,
       response_type: 'token',
       scope: 'https://www.googleapis.com/auth/photoslibrary.appendonly https://www.googleapis.com/auth/photoslibrary.sharing openid email profile',
       include_granted_scopes: 'true',
