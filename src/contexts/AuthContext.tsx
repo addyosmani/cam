@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return;
         }
 
-        // Load Google APIs
+        // Load the Google APIs
         await new Promise<void>((resolve) => {
           const script = document.createElement('script');
           script.src = 'https://accounts.google.com/gsi/client';
